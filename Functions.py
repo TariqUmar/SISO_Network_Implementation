@@ -16,6 +16,10 @@ import random
     10) generate_rayleigh_fading_channel
     11) compute_SNR
 
+    New functions:
+    12) generate_IRS
+    13) generate_nakagami_samples
+
 '''
 
 def generate_station_positions(base_station_position):
@@ -33,8 +37,12 @@ def generate_user_positions(num_users, grid_radius):
     return np.array(user_positions)
 
 
-def compute_distances(user_positions):
-    distances = np.sqrt(np.sum(np.square(user_positions), axis=1))
+def generate_IRS(IRS_position):
+    return np.array([IRS_position])
+
+
+def compute_distances(user_positions, base_stations):
+    distances = np.sqrt(np.sum(np.square(user_positions - base_stations), axis=1))
     return distances
 
 
@@ -55,13 +63,13 @@ def compute_average_outage_probability(outage_probabilities):
 
 
 def compute_rate(SNR):
-    SNR_watts = (10**(SNR/10))/1000
+    SNR_watts = (10**(SNR/10))
     return np.log2(1 + SNR_watts)
 
 
 def calc_link_budget(rayleigh_channel, distance, path_loss_exponent, transmit_power):
-        link_inter = (((np.abs(rayleigh_channel)) / np.sqrt((distance) ** path_loss_exponent)) ** 2)
-        link_budget = 10 * np.log10(link_inter) + 30 + transmit_power #need to add actual noise power
+        link_inter = (((np.abs(rayleigh_channel)) / np.sqrt((distance) ** path_loss_exponent)) ** 2) * transmit_power
+        link_budget = 10 * np.log10(link_inter) + 30 #need to add actual noise power
         return link_budget
 
 
@@ -82,6 +90,13 @@ def generate_rayleigh_fading_channel(num_users, std_mean, std_dev):
     rayleigh_channel = np.abs(X + 1j*Y)
     return rayleigh_channel
 
+
+def generate_nakagami_samples(m, omega, size):
+    magnitude_samples = np.sqrt(omega) * np.sqrt(np.random.gamma(m, 1, size)) / np.sqrt(np.random.gamma(m - 0.5, 1, size))
+    phase_samples = np.random.uniform(0, 2 * np.pi, size=size)
+    complex_samples = magnitude_samples * np.exp(1j * phase_samples)
+    return complex_samples
+    
 
 def compute_SNR(link_budget, noise_floor):
     SNR = link_budget - noise_floor
