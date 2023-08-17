@@ -187,7 +187,7 @@ def compute_path_loss(distances, path_loss_exponent):
 def generate_rayleigh_fading_channel(Nt, std_mean, std_dev):
     X = np.random.normal(std_mean, std_dev, Nt) 
     Y = np.random.normal(std_mean, std_dev, Nt) 
-    rayleigh_channel = np.abs(X + 1j*Y)
+    rayleigh_channel = X + 1j*Y
     return rayleigh_channel
 
 
