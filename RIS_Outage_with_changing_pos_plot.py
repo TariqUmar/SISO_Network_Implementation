@@ -46,6 +46,5 @@ circle = plt.Circle((xt, yt), (GRID_RADIUS), edgecolor='black', facecolor='none'
 ax.add_patch(circle)
 art3d.pathpatch_2d_to_3d(circle, z=0, zdir='z')  # Add the circle to the x-y plane at z=zt
 
-
 plt.show()
 
