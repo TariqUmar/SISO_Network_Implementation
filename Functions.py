@@ -145,6 +145,20 @@ def compute_distances(user_positions, base_stations):
     distances = np.sqrt(np.sum(np.square(user_positions - base_stations), axis=1))
     return distances
 
+def compute_distances_2(A1, A2):
+    A1_reshaped = A1[:, np.newaxis, :]
+    A2_reshaped = A2[np.newaxis, :, :]
+
+    # Calculate the pairwise differences
+    differences = A1_reshaped - A2_reshaped
+
+    # Square the differences and sum along the last axis to get the squared distances
+    squared_distances = np.sum(differences**2, axis=2)
+
+    # Take the square root to get the actual distances
+    distances = np.sqrt(squared_distances)
+    return distances
+
 
 # Function to compute outage probability at each iteration
 def compute_outage_probability(num_users, rate, rate_threshold):
