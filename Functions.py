@@ -127,6 +127,11 @@ def generate_irs_coordinates_3D(xs, ys, zs, nIRSrow, nIRScol, halfLambda, quarte
     return locS.reshape(nIRSrow * nIRScol, 3)
 
 
+def calc_distance_3D (var1, var2):
+    x1,y1,z1 = var1
+    x2,y2,z2 = var2
+    return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2)**2)
+
 def calculate_distances_2D(locU, locT, locS):
     dTU = np.array([np.linalg.norm(locU[k, :-1] - locT[:, :-1], axis=1) for k in range(locU.shape[0])])
     dSU = np.array([np.linalg.norm(locU[k, :-1] - locS[:, :-1], axis=1) for k in range(locU.shape[0])])
@@ -145,20 +150,6 @@ def compute_distances(user_positions, base_stations):
     distances = np.sqrt(np.sum(np.square(user_positions - base_stations), axis=1))
     return distances
 
-def compute_distances_2(A1, A2):
-    A1_reshaped = A1[:, np.newaxis, :]
-    A2_reshaped = A2[np.newaxis, :, :]
-
-    # Calculate the pairwise differences
-    differences = A1_reshaped - A2_reshaped
-
-    # Square the differences and sum along the last axis to get the squared distances
-    squared_distances = np.sum(differences**2, axis=2)
-
-    # Take the square root to get the actual distances
-    distances = np.sqrt(squared_distances)
-    return distances
-
 
 # Function to compute outage probability at each iteration
 def compute_outage_probability(num_users, rate, rate_threshold):
@@ -173,6 +164,17 @@ def compute_outage_probability(num_users, rate, rate_threshold):
 def compute_average_outage_probability(outage_probabilities):
     num_simulations = len(outage_probabilities)
     outage_prob_sum = np.sum(outage_probabilities)
+    return outage_prob_sum / num_simulations
+
+# Function to compute outage probability at each iteration
+def compute_energy_efficiency(rate, power):
+    return rate / power
+
+
+# Function to compute average outage probability
+def compute_average_energy_efficiency(ee):
+    num_simulations = len(ee)
+    outage_prob_sum = np.sum(ee)
     return outage_prob_sum / num_simulations
 
 
@@ -201,7 +203,7 @@ def compute_path_loss(distances, path_loss_exponent):
 def generate_rayleigh_fading_channel(Nt, std_mean, std_dev):
     X = np.random.normal(std_mean, std_dev, Nt) 
     Y = np.random.normal(std_mean, std_dev, Nt) 
-    rayleigh_channel = X + 1j*Y
+    rayleigh_channel = (X + 1j*Y)
     return rayleigh_channel
 
 
@@ -220,3 +222,349 @@ def compute_SNR(link_budget, noise_floor):
 def db2pow(x):
     # returns the dB value 
     return 10**(0.1*x)
+
+def wrapTo2Pi(theta):
+    return np.mod(theta,2*np.pi)
+
+def wrapToPi(angle):
+    return (angle + np.pi) % (2 * np.pi) - np.pi
+
+#function for converting watts to dBm
+def pow2dBm(watt):
+    dBm = 10* np.log10(watt) + 30
+    return dBm
+    
+#function for converting dBm to watts
+def dBm2pow(dBm):
+    watt = (10**(dBm/10))/1000
+    return watt
+
+def db2pow(dB):
+    watt = (10**(dB/10))
+    return watt
+
+def pow2db(watt):
+    db = 10 * np.log10(watt)
+    return db
+
+
+def generate_quantized_theta_set(B):
+    K = 2**B
+    delta_theta = 2 * np.pi / K
+    quantized_theta_set = np.arange(0, K) * delta_theta - np.pi
+    return quantized_theta_set
+
+def compute_results_array_continuous(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G):
+    # Initialize an empty list to store theta_n values for each i
+    theta_n_values_complex = []
+
+    for i in range(K):
+        theta_n_i = []
+        for j in range(Ns):
+            theta_n = np.angle(h_dk[0][i]) - np.angle(h_rk[j][i]) - np.angle(G[j][0])
+            theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
+            theta_n_i.append(theta_n)
+        theta_n_values_complex.append(1 * np.exp(1j * np.array(theta_n_i)))
+
+    theta_n_values_complex = np.array(theta_n_values_complex)
+
+    # Initialize an empty list to store diagonal matrices
+    diagonal_matrices = []
+
+    for row in theta_n_values_complex:
+        diagonal_matrix = np.diag(row[:Ns])
+        diagonal_matrices.append(diagonal_matrix)
+
+    # Convert diagonal_matrices to a NumPy array
+    diagonal_matrices = np.array(diagonal_matrices)
+
+    # Initialize an empty list to store the results for each column
+    results_list = []
+
+    for row_index in range(diagonal_matrices.shape[0]):
+        single_row_diag = diagonal_matrices[row_index, :, :]
+        single_row = h_rk_transpose[row_index,:]
+    
+        result_inter = np.dot(single_row, single_row_diag)
+
+        result = np.dot(result_inter, G)
+        results_list.append(result)
+
+    # Convert the list of results into a numpy array
+    results_array = np.array(results_list)
+    results_array = results_array.reshape(Nt, K)
+
+    return results_array
+
+def results_array_discrete(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B):
+    # Create a set of quantized theta values
+    quantized_theta_set = ((2 * np.pi * np.arange(0, 2**B, 1) / (2**B)) - np.pi)
+    quantized_theta_n_values_complex = []
+
+    for i in range(K):
+        quantized_theta_n_i = []
+
+        for j in range(Ns):
+            theta_n = - np.angle(h_rk[j][i]) - np.angle(G[j][0])
+            theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
+            nearest_quantized_theta = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
+            quantized_theta_n_i.append(nearest_quantized_theta)
+
+        quantized_theta_n_values_complex.append(1 * np.exp(1j * np.array(quantized_theta_n_i)))
+
+    theta_n_values_complex = np.array(quantized_theta_n_values_complex)
+
+    # Initialize an empty list to store diagonal matrices
+    diagonal_matrices = []
+
+    # Transform each row into a diagonal matrix
+    for row in theta_n_values_complex:
+        diagonal_matrix = np.diag(row[:Ns])
+        diagonal_matrices.append(diagonal_matrix)
+
+    # Convert diagonal_matrices to a NumPy array
+    diagonal_matrices = np.array(diagonal_matrices)
+
+    # Initialize an empty list to store the results for each column
+    results_list = []
+
+    # Loop over each row/user in the diagonal_matrices
+    for row_index in range(diagonal_matrices.shape[0]):
+        single_row_diag = diagonal_matrices[row_index, :, :]
+        single_row = h_rk_transpose[row_index,:]
+        result_inter = np.dot(single_row, single_row_diag)
+        result = np.dot(result_inter, G)
+        results_list.append(result)
+
+    # Convert the list of results into a numpy array
+    results_array = np.array(results_list)
+    results_array = results_array.reshape(Nt, K)
+
+    return results_array
+
+def results_array_practical_discrete(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B, beta_min, k, phi):
+    # Create a set of quantized theta values
+    quantized_theta_set = ((2 * np.pi * np.arange(0, 2**B, 1) / (2**B)) - np.pi)
+
+    # Initialize an empty list to store quantized theta_n values for each i
+    quantized_theta_n_values_complex = []
+
+    for i in range(K):
+        beta_n = []
+        quantized_theta_n_i = []
+
+        for j in range(Ns):
+            theta_n = - np.angle(h_rk[j][i]) - np.angle(G[j][0])
+
+            # Adjust theta_n to lie within the range (-π, π)
+            theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
+
+            # Find the nearest quantized theta value
+            nearest_quantized_theta_new = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
+            quantized_theta_n_i.append(nearest_quantized_theta_new)
+
+            beta_theta_n = ((1 - beta_min) * ((np.sin(nearest_quantized_theta_new - phi) + 1) / 2) ** k + beta_min)
+            beta_n.append(beta_theta_n)
+
+        quantized_theta_n_values_complex.append(np.array(beta_n) * np.exp(1j * np.array(quantized_theta_n_i)))
+
+    theta_n_values_complex = np.array(quantized_theta_n_values_complex)
+
+    # Initialize an empty list to store diagonal matrices
+    diagonal_matrices = []
+
+    # Transform each row into a diagonal matrix
+    for row in theta_n_values_complex:
+        diagonal_matrix = np.diag(row[:Ns])
+        diagonal_matrices.append(diagonal_matrix)
+
+    # Convert diagonal_matrices to a NumPy array
+    diagonal_matrices = np.array(diagonal_matrices)
+
+    # Initialize an empty list to store the results for each column
+    results_list = []
+
+    # Loop over each row/user in the diagonal_matrices
+    for row_index in range(diagonal_matrices.shape[0]):
+        # Get the corresponding diagonal matrix for the current row/user
+        single_row_diag = diagonal_matrices[row_index, :, :]
+
+        # Extract the single column from f_m_transpose using indexing and transpose
+        single_row = h_rk_transpose[row_index,:]
+
+        # Perform the dot product between f_m_transpose (5, 10) and the current diagonal matrix (10, 10)
+        result_inter = np.dot(single_row, single_row_diag)
+
+        # Perform the final matrix multiplication of the result_inter (5, 10) and g (10, 1)
+        result = np.dot(result_inter, G)
+        results_list.append(result)
+
+    # Convert the list of results into a numpy array
+    results_array = np.array(results_list)
+    results_array = results_array.reshape(Nt, K)
+
+    return results_array
+
+def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G, B):
+    # Create a set of quantized theta values
+    quantized_theta_set = ((2 * np.pi * np.arange(0, 2**B, 1) / (2**B)) - np.pi)
+
+    # Initialize an empty list to store theta_n values for each i
+    theta_n_values_complex = []
+    inc = int(Ns / K)
+
+    for i in range(K):
+        theta_n_i = []
+
+        for j in range(i * inc, (i + 1) * inc):
+            theta_n = -np.angle(h_rk[j][i]) - np.angle(G[j][0])
+
+            # Adjust theta_n to lie within the range (-π, π)
+            theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
+
+            # Find the nearest quantized theta value
+            nearest_quantized_theta_new = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
+            theta_n_i.append(nearest_quantized_theta_new)
+
+        theta_n_values_complex.append(1 * np.exp(1j * np.array(theta_n_i)))
+
+    theta_n_values_complex = np.array(theta_n_values_complex)
+
+    # Initialize an empty list to store diagonal matrices
+    diagonal_matrices = []
+
+    # Transform each row into a diagonal matrix
+    for row in theta_n_values_complex:
+        diagonal_matrix = np.diag(row[:Ns])
+        diagonal_matrices.append(diagonal_matrix)
+
+    # Convert diagonal_matrices to a NumPy array
+    diagonal_matrices = np.array(diagonal_matrices)
+
+    results_list = []
+
+    for row_index in range(diagonal_matrices.shape[0]):
+        # Get the corresponding diagonal matrix for the current row/user is 1x1
+        single_row_diag = diagonal_matrices[row_index]
+
+        # Calculate the starting and ending indices for slicing based on row_index
+        start_index = row_index * inc
+        end_index = start_index + inc
+
+        # Extract the single column from h_rk_transpose using slicing and transpose
+        single_row = h_rk_transpose[row_index, start_index:end_index]
+
+        # Reshape the single_row to (1, inc)
+        single_row = single_row.reshape(1, inc)
+
+        # Perform the dot product between f_m_transpose (1, inc) and the current diagonal matrix (inc, inc)
+        result_inter = np.dot(single_row, single_row_diag)
+
+        # Perform the final matrix multiplication of result_inter (1, inc) and a subset of G (inc, 1)
+        subset_G = G[start_index:end_index]
+        result = np.dot(result_inter, subset_G)
+        results_list.append(result)
+
+    # Convert the list of results into a numpy array
+    results_array = np.array(results_list)
+    results_array = results_array.reshape(Nt, K)
+
+    return results_array
+
+def results_array_sharing_practical(K, Ns, Nt, h_rk, h_rk_transpose, G, B, beta_min, phi, k):
+    # Create a set of quantized theta values
+    quantized_theta_set = ((2 * np.pi * np.arange(0, 2**B, 1) / (2**B)) - np.pi)
+
+    # Initialize an empty list to store theta_n values for each i
+    theta_n_values_complex = []
+    inc = int(Ns / K)
+
+    for i in range(K):
+        theta_n_i = []
+        beta_n = []
+
+        for j in range(inc * i, inc * (i + 1)):
+            theta_n = -np.angle(h_rk[j][i]) - np.angle(G[j][0])
+
+            # Adjust theta_n to lie within the range (-π, π)
+            theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
+
+            # Find the nearest quantized theta value
+            nearest_quantized_theta_new = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
+            theta_n_i.append(nearest_quantized_theta_new)
+
+            beta_theta_n = ((1 - beta_min) * ((np.sin(nearest_quantized_theta_new - phi) + 1) / 2) ** k + beta_min)
+            beta_n.append(beta_theta_n)
+
+        theta_n_values_complex.append(np.array(beta_n) * np.exp(1j * np.array(theta_n_i)))
+
+    theta_n_values_complex = np.array(theta_n_values_complex)
+
+    # Initialize an empty list to store diagonal matrices
+    diagonal_matrices = []
+
+    # Transform each row into a diagonal matrix
+    for row in theta_n_values_complex:
+        diagonal_matrix = np.diag(row[:Ns])
+        diagonal_matrices.append(diagonal_matrix)
+
+    # Convert diagonal_matrices to a NumPy array
+    diagonal_matrices = np.array(diagonal_matrices)
+
+    results_list = []
+
+    for row_index in range(diagonal_matrices.shape[0]):
+        # Get the corresponding diagonal matrix for the current row/user is 1x1
+        single_row_diag = diagonal_matrices[row_index]
+
+        # Calculate the starting and ending indices for slicing based on row_index
+        start_index = row_index * inc
+        end_index = start_index + inc
+
+        # Extract the single column from h_rk_transpose using slicing and transpose
+        single_row = h_rk_transpose[row_index, start_index:end_index]
+        
+        # Reshape the single_row to (1, inc)
+        single_row = single_row.reshape(1, inc)
+        
+        # Perform the dot product between f_m_transpose (1, inc) and the current diagonal matrix (inc, inc)
+        result_inter = np.dot(single_row, single_row_diag)
+
+        # Perform the final matrix multiplication of result_inter (1, inc) and a subset of G (inc, 1)
+        subset_G = G[start_index:end_index]
+        result = np.dot(result_inter, subset_G)
+        results_list.append(result)
+
+    # Convert the list of results into a numpy array
+    results_array = np.array(results_list)
+    results_array = results_array.reshape(Nt, K)
+
+    return results_array
+
+def compute_power_at_base_station(wn, Pt, PB_dBW):
+    # Convert PB from dBW to dBm
+    PB_dBm = PB_dBW + 30
+    PB_watts = (10**(PB_dBm/10))/1000
+
+    # Calculate P1
+    P1 = wn * Pt + PB_watts
+
+    return P1
+
+def compute_power_consumption_at_ris(B, Ns):
+    # Define power consumption levels for different quantization bits
+    if B == 1:
+        power_per_element = 5
+    elif B == 2:
+        power_per_element = 10
+    elif B == 3:
+        power_per_element = 15
+    else:
+        power_per_element = 20  # Default power consumption
+
+    # Calculate total power consumption for all Ns elements
+    power_consumption = power_per_element 
+    power_consumption = (10**(power_consumption/10))/1000
+    total_power_consumption = power_consumption * Ns
+    return total_power_consumption
+
