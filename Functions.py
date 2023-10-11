@@ -562,4 +562,3 @@ def compute_power_consumption_at_ris(B, Ns):
     power_consumption = (10**(power_consumption/10))/1000
     total_power_consumption = power_consumption * Ns
     return total_power_consumption
-
