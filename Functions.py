@@ -405,9 +405,7 @@ def results_array_practical_discrete(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B
 
     return results_array
 
-def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G, B):
-    # Create a set of quantized theta values
-    quantized_theta_set = ((2 * np.pi * np.arange(0, 2**B, 1) / (2**B)) - np.pi)
+def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G):
 
     # Initialize an empty list to store theta_n values for each i
     theta_n_values_complex = []
@@ -423,8 +421,10 @@ def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G, B):
             theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
 
             # Find the nearest quantized theta value
-            nearest_quantized_theta_new = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
-            theta_n_i.append(nearest_quantized_theta_new)
+            # nearest_quantized_theta_new = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
+            # theta_n_i.append(nearest_quantized_theta_new)
+            theta_n_i.append(theta_n)
+
 
         theta_n_values_complex.append(1 * np.exp(1j * np.array(theta_n_i)))
 
@@ -567,4 +567,3 @@ def compute_power_consumption_at_ris(B, Ns):
     power_consumption = (10**(power_consumption/10))/1000
     total_power_consumption = power_consumption * Ns
     return total_power_consumption
-
