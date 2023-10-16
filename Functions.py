@@ -255,15 +255,14 @@ def pow2db(watt):
     db = 10 * np.log10(watt)
     return db
 
-
 def generate_quantized_theta_set(B):
     K = 2**B
     delta_theta = 2 * np.pi / K
     quantized_theta_set = np.arange(0, K) * delta_theta - np.pi
     return quantized_theta_set
 
-def compute_results_array_continuous(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G):
-    # Initialize an empty list to store theta_n values for each i
+def compute_results_array_continuous(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, d, d_max):
+    # Initialize empty lists to store theta_n values and results
     theta_n_values_complex = []
 
     for i in range(K):
@@ -273,7 +272,7 @@ def compute_results_array_continuous(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G):
             theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
             theta_n_i.append(theta_n)
         theta_n_values_complex.append(1 * np.exp(1j * np.array(theta_n_i)))
-
+        
     theta_n_values_complex = np.array(theta_n_values_complex)
 
     # Initialize an empty list to store diagonal matrices
@@ -313,7 +312,7 @@ def results_array_discrete(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B):
         quantized_theta_n_i = []
 
         for j in range(Ns):
-            theta_n = - np.angle(h_rk[j][i]) - np.angle(G[j][0])
+            theta_n = np.angle(h_dk[0][i]) - np.angle(h_rk[j][i]) - np.angle(G[j][0])
             theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
             nearest_quantized_theta = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
             quantized_theta_n_i.append(nearest_quantized_theta)
@@ -413,10 +412,7 @@ def results_array_practical_discrete(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B
 
     return results_array
 
-def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G, B):
-    # Create a set of quantized theta values
-    quantized_theta_set = ((2 * np.pi * np.arange(0, 2**B, 1) / (2**B)) - np.pi)
-
+def results_array_sharing_ideal(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G):
     # Initialize an empty list to store theta_n values for each i
     theta_n_values_complex = []
     inc = int(Ns / K)
@@ -425,14 +421,11 @@ def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G, B):
         theta_n_i = []
 
         for j in range(i * inc, (i + 1) * inc):
-            theta_n = -np.angle(h_rk[j][i]) - np.angle(G[j][0])
+            theta_n = np.angle(h_dk[0][i]) - np.angle(h_rk[j][i]) - np.angle(G[j][0])
 
             # Adjust theta_n to lie within the range (-π, π)
             theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
-
-            # Find the nearest quantized theta value
-            nearest_quantized_theta_new = quantized_theta_set[np.argmin(np.abs(theta_n - quantized_theta_set))]
-            theta_n_i.append(nearest_quantized_theta_new)
+            theta_n_i.append(theta_n)
 
         theta_n_values_complex.append(1 * np.exp(1j * np.array(theta_n_i)))
 
@@ -448,6 +441,7 @@ def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G, B):
 
     # Convert diagonal_matrices to a NumPy array
     diagonal_matrices = np.array(diagonal_matrices)
+    # print(np.shape(diagonal_matrices))
 
     results_list = []
 
@@ -479,7 +473,7 @@ def results_array_sharing_ideal(K, Ns, Nt, h_rk, h_rk_transpose, G, B):
 
     return results_array
 
-def results_array_sharing_practical(K, Ns, Nt, h_rk, h_rk_transpose, G, B, beta_min, phi, k):
+def results_array_sharing_practical(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B, beta_min, phi, k):
     # Create a set of quantized theta values
     quantized_theta_set = ((2 * np.pi * np.arange(0, 2**B, 1) / (2**B)) - np.pi)
 
@@ -492,7 +486,7 @@ def results_array_sharing_practical(K, Ns, Nt, h_rk, h_rk_transpose, G, B, beta_
         beta_n = []
 
         for j in range(inc * i, inc * (i + 1)):
-            theta_n = -np.angle(h_rk[j][i]) - np.angle(G[j][0])
+            theta_n = np.angle(h_dk[0][i])- np.angle(h_rk[j][i]) - np.angle(G[j][0])
 
             # Adjust theta_n to lie within the range (-π, π)
             theta_n = (theta_n + np.pi) % (2 * np.pi) - np.pi
@@ -518,6 +512,7 @@ def results_array_sharing_practical(K, Ns, Nt, h_rk, h_rk_transpose, G, B, beta_
 
     # Convert diagonal_matrices to a NumPy array
     diagonal_matrices = np.array(diagonal_matrices)
+    # print(np.shape(diagonal_matrices))
 
     results_list = []
 
@@ -702,6 +697,7 @@ def compute_power_consumption_at_ris(B, Ns):
     power_consumption = power_per_element 
     power_consumption = (10**(power_consumption/10))/1000
     total_power_consumption = power_consumption * Ns
+<<<<<<< HEAD
     return total_power_consumption
 
 def compute_area(GRID_RADIUS):
@@ -725,3 +721,6 @@ def calculate_values_for_radius(GRID_RADIUS, K):
     loc_U = user_positions
 
     return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U
+=======
+    return total_power_consumption
+>>>>>>> origin/main
