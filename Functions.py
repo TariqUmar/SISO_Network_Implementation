@@ -697,7 +697,6 @@ def compute_power_consumption_at_ris(B, Ns):
     power_consumption = power_per_element 
     power_consumption = (10**(power_consumption/10))/1000
     total_power_consumption = power_consumption * Ns
-<<<<<<< HEAD
     return total_power_consumption
 
 def compute_area(GRID_RADIUS):
@@ -721,6 +720,3 @@ def calculate_values_for_radius(GRID_RADIUS, K):
     loc_U = user_positions
 
     return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U
-=======
-    return total_power_consumption
->>>>>>> origin/main
