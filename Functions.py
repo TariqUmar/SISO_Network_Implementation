@@ -698,3 +698,25 @@ def compute_power_consumption_at_ris(B, Ns):
     power_consumption = (10**(power_consumption/10))/1000
     total_power_consumption = power_consumption * Ns
     return total_power_consumption
+
+def compute_area(GRID_RADIUS):
+    area = np.pi * (GRID_RADIUS)**2
+    return area
+
+def calculate_values_for_radius(GRID_RADIUS, K):
+    grid_area = compute_area(GRID_RADIUS)
+    GRID_RADIUS_HALF = GRID_RADIUS / 2
+
+    IRS_x1 = GRID_RADIUS_HALF*np.cos(0.92729522)
+    IRS_y1 = np.sqrt(GRID_RADIUS_HALF**2 - IRS_x1**2)
+
+    IRS_x2 = IRS_x1
+    IRS_y2 = -1 * IRS_y1
+
+    IRS_POSITION_1 = (IRS_x1, IRS_y1, 10)
+    IRS_POSITION_2 = (IRS_x2, IRS_y2, 10)
+
+    user_positions = generate_user_positions_3D(K, GRID_RADIUS)
+    loc_U = user_positions
+
+    return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U
