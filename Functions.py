@@ -1,8 +1,6 @@
 import numpy as np
 import random
 
-# Function to generate channel coefficients
-
 '''
 #-------------------- description of variables ----------------------
 Nt:         number of BS transmit antennas 
@@ -43,32 +41,45 @@ Gr:         receive-antenna gain
 '''
 
 def generate_station_positions_2D(base_station_position):
+    '''
+    Input: Position as (x,y)
+    Returns base station positions in the form of an array [(x,y)]
+    '''
     xt, yt = base_station_position
     return np.array([[xt, yt]])
 
 
-def generate_station_positions_3D(base_station_position):
+def generate_station_positions_3D(base_station_position: int):
+    '''
+    Input: Position as (x,y,z)
+    Returns base station positions in the form of an array [(x,y,z)]
+    '''
     xt, yt, zt = base_station_position
     return np.array([[xt, yt, zt]])
 
 
-def generate_user_positions_2D(num_users, grid_radius):
-    user_positions = []
-    for _ in range(num_users):
-        theta = 2 * np.pi * random.random()  # Azimuth angle
-        radius = grid_radius * np.sqrt(random.random())  # Use sqrt for 2D
-        x = radius * np.cos(theta)
-        y = radius * np.sin(theta)
-        user_positions.append((x, y))
-    return np.array(user_positions)
+def generate_user_positions_2D(num_pos:int , r_range: int):
+    '''
+    Generates random user positions in (x,y)
+    Input: num_pos = Number of positions to be generated, 
+           r_range = Radius of Grid
+    Output: positions = An array of positions as [(x,y)] 
+    '''
+    positions = np.array([])
+    user_theta = np.random.uniform(0, 2*np.pi,num_pos)
+    user_r = np.random.uniform(0,  r_range,num_pos)
+    user_x = user_r * np.cos(user_theta)
+    user_y = user_r * np.sin(user_theta)
+    positions = [(x, y) for x, y in zip(user_x, user_y)]
+    return positions
 
 
-def generate_user_positions_3D(num_users, grid_radius):
+def generate_user_positions_3D(num_pos: int, r_range: int):
     user_positions = []
-    for _ in range(num_users):
+    for _ in range(num_pos):
         theta = 2 * np.pi * random.random()  # Azimuth angle
         phi = np.pi * random.random()       # Elevation angle
-        radius = grid_radius * np.sqrt(random.random())  # Use cbrt for 3D
+        radius = r_range * np.sqrt(random.random())  # Use cbrt for 3D
         x = radius * np.cos(theta) * np.sin(phi)
         y = radius * np.sin(theta) * np.sin(phi)
         z = 0
@@ -76,7 +87,12 @@ def generate_user_positions_3D(num_users, grid_radius):
     return np.array(user_positions)
 
 
-def generate_transmit_antenna_coordinates_2D(Nt, xt, yt, halfLambda, quarterLambda):
+def generate_transmit_antenna_coordinates_2D(Nt: int, xt, yt, halfLambda, quarterLambda):
+
+    '''
+        Generates coordinates of all the transmit antennas, located half a wavelength parat on the same transmitter.
+        Input : Nt = Number of antennas, xt = x coordinate, yt = y coordinate, half lambda = half wavelength
+    '''
     locTcenter = np.array([xt, yt], dtype=float)
     locT = np.tile(locTcenter, (Nt, 1))
     if Nt % 2 == 0:
@@ -85,7 +101,6 @@ def generate_transmit_antenna_coordinates_2D(Nt, xt, yt, halfLambda, quarterLamb
         locT[0, 1] = yt - 0.5 * (Nt - 1) * halfLambda
     locT[:, 1] = [locT[0, 1] + nt * halfLambda for nt in range(Nt)]
     return locT
-
 
 def generate_transmit_antenna_coordinates_3D(Nt, xt, yt, zt, halfLambda, quarterLambda):
     locTcenter = np.array([xt, yt, zt], dtype=float)
@@ -97,11 +112,9 @@ def generate_transmit_antenna_coordinates_3D(Nt, xt, yt, zt, halfLambda, quarter
     locT[:, 1] = [locT[0, 1] + nt * halfLambda for nt in range(Nt)]
     return locT
 
-
 def generate_IRS_2D(IRS_position):
     xs, ys = IRS_position
     return np.array([[xs, ys]])
-
 
 def generate_IRS_3D(IRS_position):
     xs, ys, zs = IRS_position
@@ -155,9 +168,8 @@ def compute_distances(user_positions, base_stations):
 def compute_outage_probability(num_users, rate, rate_threshold):
     outage = 0
     for j in range(num_users):
-        if rate[j] < rate_threshold:
-            outage += 1
-    return outage / num_users
+      outage = np.sum(rate[j] < rate_threshold)
+      return outage / num_users
 
 
 # Function to compute average outage probability
@@ -174,8 +186,8 @@ def compute_energy_efficiency(rate, power):
 # Function to compute average outage probability
 def compute_average_energy_efficiency(ee):
     num_simulations = len(ee)
-    outage_prob_sum = np.sum(ee)
-    return outage_prob_sum / num_simulations
+    ee_sum = np.sum(ee)
+    return ee_sum / num_simulations
 
 
 def compute_rate(SNR):
@@ -200,9 +212,9 @@ def compute_path_loss(distances, path_loss_exponent):
     return 1 / np.sqrt(distances ** path_loss_exponent)
 
 
-def generate_rayleigh_fading_channel(Nt, std_mean, std_dev):
-    X = np.random.normal(std_mean, std_dev, Nt) 
-    Y = np.random.normal(std_mean, std_dev, Nt) 
+def generate_rayleigh_fading_channel(K, std_mean, std_dev):
+    X = np.random.normal(std_mean, std_dev, K) 
+    Y = np.random.normal(std_mean, std_dev, K) 
     rayleigh_channel = (X + 1j*Y)
     return rayleigh_channel
 
@@ -218,10 +230,6 @@ def compute_SNR(link_budget, noise_floor):
     SNR = link_budget - noise_floor
     return SNR
 
-
-def db2pow(x):
-    # returns the dB value 
-    return 10**(0.1*x)
 
 def wrapTo2Pi(theta):
     return np.mod(theta,2*np.pi)
@@ -535,6 +543,134 @@ def results_array_sharing_practical(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B,
     results_array = results_array.reshape(Nt, K)
 
     return results_array
+ 
+def theta_matrix_ideal(continuous, h_dk, h_rk, g, K, Ns, quantized_theta_set):
+    '''
+        Computes the phase shifts performed by each IRS element.
+        Inputs:
+            continuous = True if phase shifts are modelled as continuous (-pi to pi)
+            h_dk = Direct link from BS to user, if input as None, not considered.
+            h_rk = Indirect link from IRS to User of shape (Ns,K)
+            g = Fading channel from BS to IRS of shape (Ns, 1)
+            K = Num of Users
+            Ns = Num of IRS elements 
+            quantized_theta_set = Quantization according to quantization bit
+        Return:
+            Returns theta diagnol matrix, containing ideal phase shifts wrt each IRS element. Shape (K,Ns,Ns)
+    '''
+    inc = int (Ns/K)
+    theta_n = np.zeros((K, inc), dtype=complex)
+    nearest_quantized_theta = np.zeros((K, inc), dtype=complex)
+
+    if(continuous == True and quantized_theta_set == None):
+        if (h_dk != None):
+            for m in range(K):
+                theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+       
+        else:
+            for m in range(K):
+                theta_n[m] = wrapToPi(-(np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+        phi_complex = 1 * np.exp(1j * theta_n)
+
+    else:
+        nearest_quantized_theta = np.zeros((K,inc))
+        if (h_dk != None):
+            for m in range(K):
+                for n in range(inc):
+                    theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                    nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
+        else:
+            for m in range(K):
+                for n in range(inc):
+                    theta_n[m] = wrapToPi(- (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                    nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
+        phi_complex = 1*np.exp(1j*nearest_quantized_theta)
+
+    theta = np.zeros((K,inc,inc), dtype= np.complex128)
+    row_val = []
+    for m in range(K):
+        row_val = phi_complex[m,:]
+        for n in range(inc):
+            theta[m,n,n] = row_val[n]
+    return theta
+
+def theta_matrix_practical(continuous, h_dk, h_rk, g, K, Ns, B_min, phi, a, quantized_theta_set):
+    '''
+        Computes the phase shifts performed by each IRS element.
+        Inputs:
+            continuous = True if phase shifts are modelled as continuous (-pi to pi)
+            h_dk = Direct link from BS to user, if input as None, not considered.
+            h_rk = Indirect link from IRS to User of shape (Ns,K)
+            g = Fading channel from BS to IRS of shape (Ns, 1)
+            K = Num of Users
+            Ns = Num of IRS elements 
+            B_min = Mininum value of B for quantization
+            phi, a = Parameter for practical phase shifts
+            quantized_theta_set = Quantization according to quantization bit
+        Return:
+            Returns theta diagnol matrix, containing practical phase shifts wrt each IRS element. Shape (K,Ns,Ns)
+    '''
+    inc = int(Ns / K)
+    B = np.zeros((K,inc))
+    v = np.zeros((K,inc),dtype=np.complex128)
+    theta_n = np.zeros((K, inc), dtype=complex)
+    nearest_quantized_theta = np.zeros((K, inc), dtype=complex)
+
+    if(continuous == True and quantized_theta_set == None):
+        if (h_dk != None):
+            for m in range(K):
+                for n in range(inc):
+                    theta_n[m] = wrapToPi( (np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                    B[m] = (1 - B_min) * ((np.sin(theta_n[m] - phi) + 1)/2)**a + B_min
+                    v[m] = B[m] * np.exp(1j*theta_n[m])
+        else:
+            for m in range(K):
+                for n in range(inc):
+                    theta_n[m] = wrapToPi( - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                    B[m] = (1 - B_min) * ((np.sin(theta_n[m] - phi) + 1)/2)**a + B_min
+                    v[m] = B[m] * np.exp(1j*theta_n[m])
+    else:
+        if (h_dk != None):
+            for m in range(K):
+                for n in range(inc):
+                    theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                    nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
+                    B[m] = ((1 - B_min) * ((np.sin(nearest_quantized_theta[m] - phi) + 1) / 2) ** a + B_min)
+                    v[m] = B[m] * np.exp(1j*nearest_quantized_theta[m])
+        else:
+            for m in range(K):
+                for n in range(inc):
+                    theta_n[m] = wrapToPi(- (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                    nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
+                    B[m] = ((1 - B_min) * ((np.sin(nearest_quantized_theta[m] - phi) + 1) / 2) ** a + B_min)
+                    v[m] = B[m] * np.exp(1j*nearest_quantized_theta[m])
+
+    theta = np.zeros((K,inc,inc), dtype= np.complex128)
+    row_val = []
+    for m in range(K):
+        row_val = v[m,:]
+        for n in range(inc):
+            theta[m,n,n] = row_val[n]
+    return theta
+
+def prod_matrix (theta, h_rk_h, g, K, Ns):
+    '''
+        Computes the product matrix of h_rk, g and theta, the numerator for computing link budget.
+        Input: 
+            theta = (Ns*Ns) diagnol matrix of shape (K,Ns,Ns),
+            h_rk_h = Hermiation matrix of indirect link from IRS to User of shape (K,Ns)
+            g = Fading channel from BS to IRS of shape (Ns, 1)
+            K = Num of Users
+            Ns = Num of IRS elements        
+    '''
+    inc = int(Ns / K)
+    prod_f_theta = np.zeros((K,inc), dtype=np.complex128)
+    prod_fgtheta = np.zeros((K,1),dtype=np.complex128)
+    for m in range (K):
+            prod_f_theta[m,:] = np.matmul(h_rk_h[m,m*inc:(m+1)*inc],theta[m,:,:]) #multiplying each row with row of diagnol (one theta per user)
+            prod_fgtheta = np.matmul(prod_f_theta,g[m*inc:(m+1)*inc, 0])
+    prod_fgtheta = np.reshape (prod_fgtheta, (K,1))
+    return prod_fgtheta
 
 def compute_power_at_base_station(wn, Pt, PB_dBW):
     # Convert PB from dBW to dBm
@@ -562,3 +698,25 @@ def compute_power_consumption_at_ris(B, Ns):
     power_consumption = (10**(power_consumption/10))/1000
     total_power_consumption = power_consumption * Ns
     return total_power_consumption
+
+def compute_area(GRID_RADIUS):
+    area = np.pi * (GRID_RADIUS)**2
+    return area
+
+def calculate_values_for_radius(GRID_RADIUS, K):
+    grid_area = compute_area(GRID_RADIUS)
+    GRID_RADIUS_HALF = GRID_RADIUS / 2
+
+    IRS_x1 = GRID_RADIUS_HALF*np.cos(0.92729522)
+    IRS_y1 = np.sqrt(GRID_RADIUS_HALF**2 - IRS_x1**2)
+
+    IRS_x2 = IRS_x1
+    IRS_y2 = -1 * IRS_y1
+
+    IRS_POSITION_1 = (IRS_x1, IRS_y1, 10)
+    IRS_POSITION_2 = (IRS_x2, IRS_y2, 10)
+
+    user_positions = generate_user_positions_3D(K, GRID_RADIUS)
+    loc_U = user_positions
+
+    return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U
