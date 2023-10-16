@@ -86,6 +86,15 @@ def generate_user_positions_3D(num_pos: int, r_range: int):
         user_positions.append((x, y, z))
     return np.array(user_positions)
 
+def generate_user_angles_3D(num_pos: int, r_range: int, angle_range):
+    user_positions = []
+    for i in range(num_pos):
+        radius = r_range * np.sqrt(random.random())  # Use cbrt for 3D
+        x = radius * np.cos(angle_range[i])
+        y = radius * np.sin(angle_range[i]) 
+        z = 0
+        user_positions.append((x, y, z))
+    return np.array(user_positions)
 
 def generate_transmit_antenna_coordinates_2D(Nt: int, xt, yt, halfLambda, quarterLambda):
 
@@ -703,7 +712,7 @@ def compute_area(GRID_RADIUS):
     area = np.pi * (GRID_RADIUS)**2
     return area
 
-def calculate_values_for_radius(GRID_RADIUS, K):
+def calculate_values_for_radius(GRID_RADIUS, K, user_angles):
     grid_area = compute_area(GRID_RADIUS)
     GRID_RADIUS_HALF = GRID_RADIUS / 2
 
@@ -716,7 +725,7 @@ def calculate_values_for_radius(GRID_RADIUS, K):
     IRS_POSITION_1 = (IRS_x1, IRS_y1, 10)
     IRS_POSITION_2 = (IRS_x2, IRS_y2, 10)
 
-    user_positions = generate_user_positions_3D(K, GRID_RADIUS)
+    user_positions = generate_user_angles_3D(K, GRID_RADIUS, user_angles)
     loc_U = user_positions
 
     return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U
