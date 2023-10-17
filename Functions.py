@@ -543,6 +543,7 @@ def results_array_sharing_practical(K, Ns, Nt, h_dk, h_rk, h_rk_transpose, G, B,
     results_array = results_array.reshape(Nt, K)
 
     return results_array
+
  
 def theta_matrix_ideal(continuous, h_dk, h_rk, g, K, Ns, quantized_theta_set):
     '''
@@ -563,27 +564,16 @@ def theta_matrix_ideal(continuous, h_dk, h_rk, g, K, Ns, quantized_theta_set):
     nearest_quantized_theta = np.zeros((K, inc), dtype=complex)
 
     if(continuous == True and quantized_theta_set == None):
-        if (h_dk != None):
-            for m in range(K):
-                theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
-       
-        else:
-            for m in range(K):
-                theta_n[m] = wrapToPi(-(np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+        for m in range(K):
+            theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
         phi_complex = 1 * np.exp(1j * theta_n)
 
     else:
         nearest_quantized_theta = np.zeros((K,inc))
-        if (h_dk != None):
-            for m in range(K):
-                for n in range(inc):
-                    theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
-                    nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
-        else:
-            for m in range(K):
-                for n in range(inc):
-                    theta_n[m] = wrapToPi(- (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
-                    nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
+        for m in range(K):
+            for n in range(inc):
+                theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
         phi_complex = 1*np.exp(1j*nearest_quantized_theta)
 
     theta = np.zeros((K,inc,inc), dtype= np.complex128)
@@ -617,30 +607,16 @@ def theta_matrix_practical(continuous, h_dk, h_rk, g, K, Ns, B_min, phi, a, quan
     nearest_quantized_theta = np.zeros((K, inc), dtype=complex)
 
     if(continuous == True and quantized_theta_set == None):
-        if (h_dk != None):
-            for m in range(K):
-                for n in range(inc):
-                    theta_n[m] = wrapToPi( (np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
-                    B[m] = (1 - B_min) * ((np.sin(theta_n[m] - phi) + 1)/2)**a + B_min
-                    v[m] = B[m] * np.exp(1j*theta_n[m])
-        else:
-            for m in range(K):
-                for n in range(inc):
-                    theta_n[m] = wrapToPi( - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
-                    B[m] = (1 - B_min) * ((np.sin(theta_n[m] - phi) + 1)/2)**a + B_min
-                    v[m] = B[m] * np.exp(1j*theta_n[m])
-    else:
-        if (h_dk != None):
             for m in range(K):
                 for n in range(inc):
                     theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
-                    nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
-                    B[m] = ((1 - B_min) * ((np.sin(nearest_quantized_theta[m] - phi) + 1) / 2) ** a + B_min)
-                    v[m] = B[m] * np.exp(1j*nearest_quantized_theta[m])
-        else:
+                    B[m] = (1 - B_min) * ((np.sin(theta_n[m] - phi) + 1)/2)**a + B_min
+                    v[m] = B[m] * np.exp(1j*theta_n[m])
+
+    else:
             for m in range(K):
                 for n in range(inc):
-                    theta_n[m] = wrapToPi(- (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
+                    theta_n[m] = wrapToPi((np.angle(h_dk[m])) - (np.angle(h_rk[m*inc:(m+1)*inc, m]) + np.angle(g[m*inc:(m+1)*inc, 0])))
                     nearest_quantized_theta[m][n] = quantized_theta_set[np.argmin(np.abs(theta_n[m][n] - quantized_theta_set))]
                     B[m] = ((1 - B_min) * ((np.sin(nearest_quantized_theta[m] - phi) + 1) / 2) ** a + B_min)
                     v[m] = B[m] * np.exp(1j*nearest_quantized_theta[m])
@@ -708,7 +684,7 @@ def calculate_values_for_radius(GRID_RADIUS, K):
     GRID_RADIUS_HALF = GRID_RADIUS / 2
 
     IRS_x1 = GRID_RADIUS_HALF*np.cos(0.92729522)
-    IRS_y1 = np.sqrt(GRID_RADIUS_HALF**2 - IRS_x1**2)
+    IRS_y1 = GRID_RADIUS_HALF*np.sin(0.92729522)
 
     IRS_x2 = IRS_x1
     IRS_y2 = -1 * IRS_y1
