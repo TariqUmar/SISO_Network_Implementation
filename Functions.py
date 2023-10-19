@@ -681,10 +681,10 @@ def compute_area(GRID_RADIUS):
 
 def calculate_values_for_radius(GRID_RADIUS, K):
     grid_area = compute_area(GRID_RADIUS)
-    GRID_RADIUS_HALF = GRID_RADIUS / 10 # Changed the factor from 2 to 10
+    Threshold = GRID_RADIUS / 10 # Changed the factor from 2 to 10
 
-    IRS_x1 = GRID_RADIUS_HALF*np.cos(0.92729522)
-    IRS_y1 = GRID_RADIUS_HALF*np.sin(0.92729522)
+    IRS_x1 = Threshold*np.cos(0.92729522)
+    IRS_y1 = Threshold*np.sin(0.92729522)
 
     IRS_x2 = IRS_x1
     IRS_y2 = -1 * IRS_y1
@@ -695,4 +695,4 @@ def calculate_values_for_radius(GRID_RADIUS, K):
     user_positions = generate_user_positions_3D(K, GRID_RADIUS)
     loc_U = user_positions
 
-    return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U
+    return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U , Threshold
