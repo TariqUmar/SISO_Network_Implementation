@@ -696,3 +696,15 @@ def calculate_values_for_radius(GRID_RADIUS, K):
     loc_U = user_positions
 
     return grid_area, IRS_POSITION_1, IRS_POSITION_2, loc_U , Threshold
+
+def generate_positions_IRS(GRID_RADIUS):
+        IRS_X = np.zeros(4)
+        IRS_Y = np.zeros(4)
+        IRS_Z = np.zeros(4)
+        for i in range(len(GRID_RADIUS)):
+                IRS_X[i] = GRID_RADIUS[i]*np.cos(0.92729522)
+                IRS_Y[i] = GRID_RADIUS[i]*np.sin(0.92729522)
+                IRS_Z[i] = 10
+        IRS_POSITIONS_1 = np.column_stack((IRS_X, IRS_Y, IRS_Z))
+        IRS_POSITIONS_2 = np.column_stack((IRS_X, -IRS_Y, IRS_Z))
+        return IRS_POSITIONS_1, IRS_POSITIONS_2
