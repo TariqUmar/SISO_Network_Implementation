@@ -661,13 +661,13 @@ def compute_power_at_base_station(wn, Pt, PB_dBW):
 def compute_power_consumption_at_ris(B, Ns):
     # Define power consumption levels for different quantization bits
     if B == 1:
-        power_per_element = 5
+        power_per_element = 3
     elif B == 2:
-        power_per_element = 10
+        power_per_element = 5
     elif B == 3:
-        power_per_element = 15
+        power_per_element = 7
     else:
-        power_per_element = 20  # Default power consumption
+        power_per_element = 12  # Default power consumption
 
     # Calculate total power consumption for all Ns elements
     power_consumption = power_per_element 
