@@ -672,7 +672,7 @@ def compute_power_consumption_at_ris(B, Ns):
     # Calculate total power consumption for all Ns elements
     power_consumption = power_per_element 
     power_consumption = (10**(power_consumption/10))/1000
-    total_power_consumption = power_consumption
+    total_power_consumption = power_consumption * Ns
     return total_power_consumption
 
 def compute_area(GRID_RADIUS):
