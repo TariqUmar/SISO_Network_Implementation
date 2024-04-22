@@ -1,3 +1,4 @@
+# Importing all libraries
 import argparse
 import os
 
@@ -8,6 +9,8 @@ import DDPG
 import utils
 
 import environment
+
+import matplotlib.pyplot as plt
 
 
 def whiten(state):
@@ -63,6 +66,58 @@ if __name__ == "__main__":
         os.makedirs("./Models")
 
     env = environment.RIS_MISO(args.num_antennas, args.num_RIS_elements, args.num_users, AWGN_var=args.awgn_var)
+    
+    #============== System parameters
+    K = args.num_users
+    Nt = args.num_antennas
+    f = 2.4e9
+    c = 3e8
+    Lambda = c/f
+    halfLambda = 0.5*Lambda
+    quarterLambda = 0.25*Lambda
+    
+    GRID_RADIUS = 1000
+    BASE_STATION_POSITION = (0, 0, 20)   
+    IRS_POSITION_1 = (60, 80, 10)
+    # IRS_POSITION_2 = (60, -80, 10)
+    Ns = args.num_RIS_elements
+    nIRSrow = Ns/2
+    nIRScol = Ns/2
+    
+    # # Generate user positions
+    user_positions = utils.generate_user_positions_3D(K, GRID_RADIUS)
+    loc_U = user_positions
+    print('User positions:'"\n")
+    print(loc_U)
+    
+    # Generate antennas position
+    AP_position = utils.generate_station_positions_3D(BASE_STATION_POSITION)
+    xt, yt, zt = AP_position[0]
+    tx_ant_coords = utils.generate_transmit_antenna_coordinates_3D(Nt, xt, yt, zt, halfLambda, quarterLambda)
+    loc_T = tx_ant_coords   
+    
+    # Generate IRS position_1
+    irs_position_1 = utils.generate_IRS_3D(IRS_POSITION_1)
+    xs_1, ys_1, zs_1 = irs_position_1[0]
+    
+    irs_coords_1 = utils.generate_irs_coordinates_3D(xs_1, ys_1, zs_1, nIRSrow, nIRScol, halfLambda, quarterLambda)
+    loc_S_1 = irs_coords_1
+    
+    # Plot the 3D grid, base station, IRS, and user positions
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(xt, yt, zt, color='red', marker='*', label='Base Station')
+    plt.scatter(IRS_POSITION_1[0], IRS_POSITION_1[1], IRS_POSITION_1[2], color='green', marker='s', label='IRS_1')
+    ax.scatter(user_positions[:, 0], user_positions[:, 1], color='blue', marker='o', label='User')
+    ax.xlim = (-GRID_RADIUS, GRID_RADIUS)
+    ax.ylim = (-GRID_RADIUS, GRID_RADIUS)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('DRL Network Environment')
+    ax.legend()
+    ax.grid(True)
+    plt.show()
 
     # Set seeds
     torch.manual_seed(args.seed)

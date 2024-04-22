@@ -6,10 +6,6 @@ import torch.nn.functional as F
 
 import numpy as np
 
-
-# Implementation of the Deep Deterministic Policy Gradient algorithm (DDPG)
-# Paper: https://arxiv.org/abs/1509.02971
-
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim, M, N, K, power_t, device, max_action=1):
         super(Actor, self).__init__()
