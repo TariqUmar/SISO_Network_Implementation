@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class RIS_MISO(object):
     def __init__(self,
                  num_antennas,
