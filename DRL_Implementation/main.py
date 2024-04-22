@@ -6,6 +6,7 @@ import numpy as np
 import torch
 
 import DDPG
+
 import utils
 
 import environment
@@ -80,9 +81,10 @@ if __name__ == "__main__":
     BASE_STATION_POSITION = (0, 0, 20)   
     IRS_POSITION_1 = (60, 80, 10)
     # IRS_POSITION_2 = (60, -80, 10)
-    Ns = args.num_RIS_elements
-    nIRSrow = Ns/2
-    nIRScol = Ns/2
+    Ns = int(args.num_RIS_elements)
+    nIRSrow = Ns//2
+    nIRScol = Ns//2
+    print(nIRScol, nIRSrow)
     
     # # Generate user positions
     user_positions = utils.generate_user_positions_3D(K, GRID_RADIUS)
