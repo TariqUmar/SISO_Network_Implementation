@@ -130,89 +130,6 @@ def get_results(figure_num, results_dir):
         colors = [RED, BLUE, TURQUOIS, PURPLE]
 
         y_ticks = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
-    elif figure_num == 9:
-        results = []
-        legend = []
-        fig_dir = f"{results_dir}/sum_rate_power"
-
-        rsi_N = [4, 10]
-
-        for N in rsi_N:
-            results.append(np.load(f"{fig_dir}/{N}.npy").squeeze())
-            legend.append(f"M = 4, N = {N}, K = 4")
-
-        legend_loc = 'upper left'
-        colors = [RED, BLUE]
-
-        x_ticks = np.arange(5, 35, 5)
-        x_tick_vals = x_ticks
-        y_ticks = np.arange(6, 17, 1)
-
-        marker = ['o', 'D']
-
-        x_label = "$P_{t}$ (dB)"
-        y_label = "Sum rate (bps/Hz)"
-    elif figure_num == 10:
-        results = []
-        legend = []
-
-        fig_dir = f"{results_dir}/cdf"
-
-        rsi_N = [4, 10, 4, 10]
-        power_levels = [5, 5, 30, 30]
-
-        for N, p_t in zip(rsi_N, power_levels):
-            reward = np.load(f"{fig_dir}/{N}_{p_t}.npy").squeeze()
-            results.append(reward)
-
-            legend.append(f"M = 4, N = {N}, K = 4, $P_t$ = {p_t} dB")
-
-        legend_loc = 'lower right'
-        colors = [RED, BLUE, ORANGE, PURPLE]
-
-        x_ticks = np.arange(0, 20, 2)
-        x_tick_vals = len(results[0]) / 18 * x_ticks
-
-        x_label = "Sum rate (bps/Hz)"
-        y_label = "CDF"
-    elif figure_num == 11:
-        results = []
-        legend = []
-
-        fig_dir = f"{results_dir}/learning_rate"
-
-        rates = [0.01, 0.001, 0.0001, 0.00001]
-
-        for lr in rates:
-            reward = np.load(f"{fig_dir}/{lr}.npy").squeeze()
-            avg_reward = compute_avg_reward(reward)
-            results.append(avg_reward)
-
-            legend.append(f"Learning rate = {lr}")
-
-        legend_loc = 'best'
-        colors = [RED, BLUE, TURQUOIS, PURPLE]
-
-        y_ticks = [1, 2, 3, 4, 5, 6, 7, 8]
-    elif figure_num == 12:
-        results = []
-        legend = []
-
-        fig_dir = f"{results_dir}/decay"
-
-        rates = [0.001, 0.0001, 0.00001, 0.000001]
-
-        for w in rates:
-            reward = np.load(f"{fig_dir}/{w}.npy").squeeze()
-            avg_reward = compute_avg_reward(reward)
-            results.append(avg_reward)
-
-            legend.append(f"Decaying rate = {w}")
-
-        legend_loc = 'best'
-        colors = [RED, BLUE, TURQUOIS, PURPLE]
-
-        y_ticks = [1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 4.8, 5.0]
 
     save_name = f"{figure_num}_reproduced.jpg"
 
@@ -222,13 +139,13 @@ def get_results(figure_num, results_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # Choose the type of the experiment
-    parser.add_argument('--figure_num', default=5, type=int, choices=[4, 5, 6, 7, 8, 9, 10, 11, 12],
+    parser.add_argument('--figure_num', default=4, type=int, choices=[4, 5, 6, 7, 8],
                         help='Choose one of figures from the paper to reproduce')
 
     args = parser.parse_args()
 
-    results_dir = "./Learning Curves"
-    fig_dir = f"./Learning Figures"
+    results_dir = "./DRL_Implementation/Learning Curves"
+    fig_dir = f"./DRL_Implementation/Learning Figures"
 
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)

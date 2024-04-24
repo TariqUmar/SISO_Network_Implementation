@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # Choose the type of the experiment
     parser.add_argument('--experiment_type', default='custom', choices=['custom', 'power', 'rsi_elements', 'learning_rate', 'decay'],
-                        help='Choose one of the experiment types to reproduce the learning curves given in the paper')
+                        help='Choose one of the experiment types')
 
     # Training-specific parameters
     parser.add_argument("--policy", default="DDPG", help='Algorithm (default: DDPG)')
